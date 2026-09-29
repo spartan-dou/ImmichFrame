@@ -10,14 +10,16 @@ namespace ImmichFrame.Core.Logic;
 public class PooledImmichFrameLogic : IAccountImmichFrameLogic, IDisposable
 {
     private readonly IGeneralSettings _generalSettings;
+    private readonly IMemoriesSwitch _memoriesSwitch;
     private readonly IApiCache _apiCache;
     private readonly IAssetPool _pool;
     private readonly ImmichApi _immichApi;
     private readonly string _downloadLocation = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "ImageCache");
 
-    public PooledImmichFrameLogic(IAccountSettings accountSettings, IGeneralSettings generalSettings, IHttpClientFactory httpClientFactory)
+    public PooledImmichFrameLogic(IAccountSettings accountSettings, IGeneralSettings generalSettings, IHttpClientFactory httpClientFactory, IMemoriesSwitch memoriesSwitch)
     {
         _generalSettings = generalSettings;
+        _memoriesSwitch = memoriesSwitch;
 
         var httpClient = httpClientFactory.CreateClient("ImmichApiAccountClient");
         AccountSettings = accountSettings;
@@ -51,7 +53,7 @@ public class PooledImmichFrameLogic : IAccountImmichFrameLogic, IDisposable
             pools.Add(new FavoriteAssetsPool(_apiCache, _immichApi, accountSettings));
 
         if (accountSettings.ShowMemories)
-            pools.Add(new MemoryAssetsPool(_immichApi, accountSettings));
+            pools.Add(new ToggleableAssetPool(new MemoryAssetsPool(_immichApi, accountSettings), () => _memoriesSwitch.Enabled));
 
         if (hasAlbums)
             pools.Add(new AlbumAssetsPool(_apiCache, _immichApi, accountSettings));
