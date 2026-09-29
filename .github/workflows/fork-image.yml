@@ -1,0 +1,74 @@
+name: Image du fork
+
+# Tests, puis image ghcr.io/spartan-dou/immichframe:patches-<sha>. Les workflows
+# amont restent en place : ils écoutent `v*` et `main`, que ce fork ne pousse pas.
+on:
+  push:
+    branches: [patches]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+env:
+  IMAGE: ghcr.io/spartan-dou/immichframe
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
+        with:
+          dotnet-version: '8.0.x'
+      - run: dotnet test ImmichFrame.Core.Tests/ImmichFrame.Core.Tests.csproj
+      - run: dotnet test ImmichFrame.WebApi.Tests/ImmichFrame.WebApi.Tests.csproj
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: 22
+      - name: Front (svelte-check)
+        working-directory: immichFrame.Web
+        run: |
+          npm ci
+          npm run check
+
+  image:
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          fetch-depth: 0
+      - name: Version
+        id: version
+        # Les tags viennent de l'amont : un fork créé avec sa seule branche main n'en a pas.
+        run: |
+          git fetch --quiet --tags https://github.com/immichFrame/ImmichFrame.git
+          # Passée à -p:AssemblyVersion : numérique uniquement, le suffixe est dans le tag de l'image.
+          base=$(git describe --tags --match 'v*' --abbrev=0 2>/dev/null || echo v0.0.0.0)
+          echo "value=${base#v}" >> "$GITHUB_OUTPUT"
+      - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+      - uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - id: meta
+        uses: docker/metadata-action@dc802804100637a589fabce1cb79ff13a1411302 # v6.2.0
+        with:
+          images: ${{ env.IMAGE }}
+          tags: |
+            type=ref,event=branch
+            type=sha,prefix={{branch}}-
+      - uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
+        with:
+          context: .
+          target: final
+          platforms: linux/amd64
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          build-args: VERSION=${{ steps.version.outputs.value }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
