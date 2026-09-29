@@ -58,11 +58,10 @@ namespace ImmichFrame.WebApi.Tests.Controllers
             => _client.PostAsync("/api/Notification", new StringContent(json, Encoding.UTF8, "application/json"));
 
         [Test]
-        public async Task Overlay_WithoutHomeAssistant_HasNoSensorsNorNotification()
+        public async Task Overlay_BeforeAnyPush_HasNoSensorsNorNotification()
         {
             var overlay = await Overlay();
 
-            Assert.That(overlay["connected"]!.GetValue<bool>(), Is.False);
             Assert.That(overlay["sensors"]!.AsArray(), Is.Empty);
             Assert.That(overlay["notification"], Is.Null);
             Assert.That(overlay["memoriesEnabled"]!.GetValue<bool>(), Is.False);
@@ -112,6 +111,25 @@ namespace ImmichFrame.WebApi.Tests.Controllers
 
             Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.NoContent));
             Assert.That((await Overlay())["notification"], Is.Null);
+        }
+
+        [Test]
+        public async Task Sensors_PushedByHomeAssistant_ShowInTheOverlayInOrder()
+        {
+            var response = await _client.PutAsJsonAsync("/api/Overlay/Sensors", new
+            {
+                sensors = new object[]
+                {
+                    new { icon = "🛋️", value = "20.5", unit = "°C" },
+                    new { icon = "🌳", value = (string?)null, unit = "°C" }
+                }
+            });
+
+            Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.NoContent));
+            var sensors = (await Overlay())["sensors"]!.AsArray();
+            Assert.That(sensors.Select(s => s!["icon"]!.GetValue<string>()), Is.EqualTo(new[] { "🛋️", "🌳" }));
+            Assert.That(sensors[0]!["value"]!.GetValue<string>(), Is.EqualTo("20.5"));
+            Assert.That(sensors[1]!["value"], Is.Null);
         }
 
         [Test]

@@ -23,8 +23,8 @@
 
 	let { onMemoriesChanged }: Props = $props();
 
-	// Home Assistant pushes to the server over its websocket; this poll only reads
-	// the server's copy, so it stays cheap.
+	// Home Assistant pushes to the server; this poll only reads the server's copy,
+	// so it stays cheap.
 	const POLL_MS = 2000;
 	const BUSY_MS = 2000;
 
