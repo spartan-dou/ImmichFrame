@@ -11,7 +11,7 @@ namespace ImmichFrame.WebApi.Controllers
 
     /// <summary>
     /// Shows or hides memories at runtime, e.g. from a Home Assistant RESTful switch.
-    /// The state lives in memory: every restart starts with memories shown.
+    /// The only source of truth for memories: kept across restarts, ShowMemories is ignored.
     /// </summary>
     [ApiController]
     [Route("api/[controller]")]

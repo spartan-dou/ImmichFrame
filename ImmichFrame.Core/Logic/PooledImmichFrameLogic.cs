@@ -52,8 +52,8 @@ public class PooledImmichFrameLogic : IAccountImmichFrameLogic, IDisposable
         if (accountSettings.ShowFavorites)
             pools.Add(new FavoriteAssetsPool(_apiCache, _immichApi, accountSettings));
 
-        if (accountSettings.ShowMemories)
-            pools.Add(new ToggleableAssetPool(new MemoryAssetsPool(_immichApi, accountSettings), () => _memoriesSwitch.Enabled));
+        // Fork: the memories switch decides, not the ShowMemories setting.
+        pools.Add(new ToggleableAssetPool(new MemoryAssetsPool(_immichApi, accountSettings), () => _memoriesSwitch.Enabled));
 
         if (hasAlbums)
             pools.Add(new AlbumAssetsPool(_apiCache, _immichApi, accountSettings));

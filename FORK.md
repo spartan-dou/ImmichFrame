@@ -6,7 +6,7 @@ l'ancienne surcouche en iframe du cadre photo (`frame-overlay` dans `cluster-con
 
 | Patch | Fichiers |
 |---|---|
-| Bouton des souvenirs : `GET`/`PUT /api/Memories`, état en mémoire, remis à « affichés » à chaque démarrage | `IMemoriesSwitch`, `ToggleableAssetPool`, `MemoriesController` ; une ligne dans `PooledImmichFrameLogic` |
+| Souvenirs : `GET`/`PUT /api/Memories`, **seule source de vérité** — `ShowMemories` est ignoré, l'état est gardé dans `$IMMICHFRAME_STATE_PATH/memories.json` (à défaut, le dossier de config). Masqués tant que l'API ne les a pas allumés, comme en amont | `IMemoriesSwitch`, `MemoriesSwitch`, `ToggleableAssetPool`, `MemoriesController` ; une ligne dans `PooledImmichFrameLogic` |
 | Home Assistant : abonnement WebSocket aux entités de `HomeAssistant.yml`, états poussés | `ImmichFrame.WebApi/HomeAssistant/` |
 | Notification : `POST`/`DELETE /api/Notification`, pour le `notify` REST de Home Assistant | `NotificationController`, `NotificationStore` |
 | Surcouche : heure, capteurs, notification, tap qui rouvre Home Assistant | `home-assistant-overlay.svelte`, deux lignes dans `home-page.svelte` |

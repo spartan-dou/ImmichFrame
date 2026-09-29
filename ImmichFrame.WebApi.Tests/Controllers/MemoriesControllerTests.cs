@@ -49,11 +49,30 @@ namespace ImmichFrame.WebApi.Tests.Controllers
         }
 
         [Test]
-        public async Task Get_StartsEnabled()
+        public async Task Get_StartsDisabled()
         {
             var client = _factory.CreateClient();
 
-            Assert.That(await ReadEnabled(await client.GetAsync("/api/Memories")), Is.True);
+            Assert.That(await ReadEnabled(await client.GetAsync("/api/Memories")), Is.False);
+        }
+
+        [Test]
+        public async Task Put_SurvivesARestart()
+        {
+            var client = _factory.CreateClient();
+            await client.PutAsJsonAsync("/api/Memories", new { enabled = true });
+            client.Dispose();
+            _factory.Dispose();
+
+            // Same config directory, fresh process: the API's last word still holds.
+            _factory = new WebApplicationFactory<Program>()
+                .WithWebHostBuilder(builder =>
+                {
+                    builder.ConfigureTestServices(services =>
+                        services.UseMockHandler(new Mock<HttpMessageHandler>().WithServerVersion()));
+                });
+
+            Assert.That(await ReadEnabled(await _factory.CreateClient().GetAsync("/api/Memories")), Is.True);
         }
 
         [Test]

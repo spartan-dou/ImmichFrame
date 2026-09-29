@@ -1,9 +1,8 @@
 namespace ImmichFrame.Core.Interfaces;
 
 /// <summary>
-/// Runtime gate on memories, flipped through the API without touching the settings.
-/// It only hides memories of accounts that have <c>ShowMemories</c> enabled, and it
-/// starts enabled on every restart.
+/// Whether memories are shown: the only source of truth, set through the API and kept
+/// across restarts. The <c>ShowMemories</c> account setting is ignored by this fork.
 /// </summary>
 public interface IMemoriesSwitch
 {

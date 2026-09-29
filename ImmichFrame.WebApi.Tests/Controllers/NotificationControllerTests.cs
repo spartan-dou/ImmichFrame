@@ -65,7 +65,7 @@ namespace ImmichFrame.WebApi.Tests.Controllers
             Assert.That(overlay["connected"]!.GetValue<bool>(), Is.False);
             Assert.That(overlay["sensors"]!.AsArray(), Is.Empty);
             Assert.That(overlay["notification"], Is.Null);
-            Assert.That(overlay["memoriesEnabled"]!.GetValue<bool>(), Is.True);
+            Assert.That(overlay["memoriesEnabled"]!.GetValue<bool>(), Is.False);
         }
 
         [Test]

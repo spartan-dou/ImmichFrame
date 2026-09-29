@@ -82,7 +82,10 @@ builder.Services.AddSingleton<IServerBehaviorSettings>(srv => srv.GetRequiredSer
 builder.Services.AddSingleton<IWeatherService, OpenWeatherMapService>();
 builder.Services.AddSingleton<ICalendarService, IcalCalendarService>();
 builder.Services.AddSingleton<IAssetAccountTracker, BloomFilterAssetAccountTracker>();
-builder.Services.AddSingleton<IMemoriesSwitch, MemoriesSwitch>();
+// Fork: memories state, kept across restarts when IMMICHFRAME_STATE_PATH is a persistent volume.
+var statePath = Environment.GetEnvironmentVariable("IMMICHFRAME_STATE_PATH") ?? configPath;
+builder.Services.AddSingleton<IMemoriesSwitch>(srv => new MemoriesSwitch(
+    Path.Combine(statePath, "memories.json"), srv.GetRequiredService<ILogger<MemoriesSwitch>>()));
 builder.Services.AddHomeAssistant(configPath);
 builder.Services.AddSingleton<Func<IList<IAccountImmichFrameLogic>, IAccountSelectionStrategy>>(srv =>
     accounts => ActivatorUtilities.CreateInstance<TotalAccountImagesSelectionStrategy>(srv, accounts));
