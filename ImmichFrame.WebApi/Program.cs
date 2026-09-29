@@ -7,6 +7,7 @@ using ImmichFrame.Core.Logic.AccountSelection;
 using ImmichFrame.WebApi.Database;
 using ImmichFrame.WebApi.Helpers;
 using ImmichFrame.WebApi.Helpers.Config;
+using ImmichFrame.WebApi.HomeAssistant;
 using ImmichFrame.WebApi.Models;
 using ImmichFrame.WebApi.Services;
 using Microsoft.EntityFrameworkCore;
@@ -82,6 +83,7 @@ builder.Services.AddSingleton<IWeatherService, OpenWeatherMapService>();
 builder.Services.AddSingleton<ICalendarService, IcalCalendarService>();
 builder.Services.AddSingleton<IAssetAccountTracker, BloomFilterAssetAccountTracker>();
 builder.Services.AddSingleton<IMemoriesSwitch, MemoriesSwitch>();
+builder.Services.AddHomeAssistant(configPath);
 builder.Services.AddSingleton<Func<IList<IAccountImmichFrameLogic>, IAccountSelectionStrategy>>(srv =>
     accounts => ActivatorUtilities.CreateInstance<TotalAccountImagesSelectionStrategy>(srv, accounts));
 builder.Services.AddHttpClient(); // Ensures IHttpClientFactory is available
