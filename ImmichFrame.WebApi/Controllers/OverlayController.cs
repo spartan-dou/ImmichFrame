@@ -29,7 +29,8 @@ namespace ImmichFrame.WebApi.Controllers
     public class OverlayDto
     {
         public List<OverlaySensorDto> Sensors { get; set; } = new();
-        public OverlayNotificationDto? Notification { get; set; }
+        /// <summary>Newest first.</summary>
+        public List<OverlayNotificationDto> Notifications { get; set; } = new();
         public bool MemoriesEnabled { get; set; }
     }
 
@@ -56,18 +57,19 @@ namespace ImmichFrame.WebApi.Controllers
         [HttpGet(Name = "GetOverlay")]
         public OverlayDto Get()
         {
-            var notification = _notifications.Current;
             return new OverlayDto
             {
                 Sensors = _sensors.Current
                     .Select(s => new OverlaySensorDto { Icon = s.Icon, Value = s.Value, Unit = s.Unit })
                     .ToList(),
-                Notification = notification == null ? null : new OverlayNotificationDto
-                {
-                    Message = notification.Message,
-                    Link = notification.Link,
-                    Until = notification.Until?.ToUnixTimeMilliseconds()
-                },
+                Notifications = _notifications.Current
+                    .Select(n => new OverlayNotificationDto
+                    {
+                        Message = n.Message,
+                        Link = n.Link,
+                        Until = n.Until?.ToUnixTimeMilliseconds()
+                    })
+                    .ToList(),
                 MemoriesEnabled = _memoriesSwitch.Enabled
             };
         }

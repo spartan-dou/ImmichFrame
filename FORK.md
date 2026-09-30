@@ -20,7 +20,7 @@ flowchart LR
 |---|---|
 | Souvenirs : `GET`/`PUT /api/Memories`, **seule source de vérité** — `ShowMemories` est ignoré, l'état est gardé dans `$IMMICHFRAME_STATE_PATH/memories.json` (à défaut, le dossier de config). Masqués tant que l'API ne les a pas allumés, comme en amont | `IMemoriesSwitch`, `MemoriesSwitch`, `ToggleableAssetPool`, `MemoriesController` ; une ligne dans `PooledImmichFrameLogic` |
 | Valeurs sous l'heure : `PUT /api/Overlay/Sensors`, en mémoire. Sans nouvelle poussée depuis 5 min, les valeurs s'affichent « -- » plutôt que figées | `SensorStore`, `OverlayController` |
-| Notification : `POST`/`DELETE /api/Notification`, en mémoire | `NotificationController`, `NotificationStore` |
+| Notifications : `POST`/`DELETE /api/Notification`, en mémoire. Trois au plus, la plus récente en haut ; un message déjà affiché remonte au lieu de prendre une deuxième place | `NotificationController`, `NotificationStore` |
 | Surcouche : heure, valeurs, notification, tap qui rouvre Home Assistant | `home-assistant-overlay.svelte`, deux lignes dans `home-page.svelte` |
 | Image | `.github/workflows/fork-image.yml` |
 

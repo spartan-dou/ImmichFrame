@@ -22,58 +22,88 @@ namespace ImmichFrame.WebApi.Tests.HomeAssistant
             _store = new NotificationStore(_time);
         }
 
+        private IEnumerable<string> Messages() => _store.Current.Select(n => n.Message);
+
         [Test]
-        public void Set_WithoutDuration_StaysUntilTheNextOne()
+        public void Add_WithoutDuration_StaysUntilPushedOut()
         {
-            Assert.That(_store.Set("Colis", "/lovelace/cameras", null, true), Is.True);
+            _store.Add("Colis", "/lovelace/cameras", null);
 
             _time.Now = _time.Now.AddDays(3);
 
-            Assert.That(_store.Current!.Message, Is.EqualTo("Colis"));
-            Assert.That(_store.Current!.Link, Is.EqualTo("/lovelace/cameras"));
-            Assert.That(_store.Current!.Until, Is.Null);
+            var shown = _store.Current.Single();
+            Assert.That(shown.Message, Is.EqualTo("Colis"));
+            Assert.That(shown.Link, Is.EqualTo("/lovelace/cameras"));
+            Assert.That(shown.Until, Is.Null);
         }
 
         [Test]
-        public void Set_WithDuration_ExpiresOnItsOwn()
+        public void Add_WithDuration_ExpiresOnItsOwn()
         {
-            _store.Set("Colis", null, 30, true);
+            _store.Add("Colis", null, 30);
 
             _time.Now = _time.Now.AddMinutes(29);
-            Assert.That(_store.Current, Is.Not.Null);
+            Assert.That(_store.Current, Is.Not.Empty);
 
             _time.Now = _time.Now.AddMinutes(2);
-            Assert.That(_store.Current, Is.Null);
+            Assert.That(_store.Current, Is.Empty);
         }
 
         [Test]
-        public void Set_WithoutReplace_IsIgnoredWhileAnotherIsShown()
+        public void Add_KeepsTheLatestOnes_NewestFirst()
         {
-            _store.Set("Premier", null, 10, true);
+            _store.Add("Un", null, null);
+            _store.Add("Deux", null, null);
+            _store.Add("Trois", null, null);
+            _store.Add("Quatre", null, null);
 
-            Assert.That(_store.Set("Second", null, null, false), Is.False);
-            Assert.That(_store.Current!.Message, Is.EqualTo("Premier"));
+            Assert.That(Messages(), Is.EqualTo(new[] { "Quatre", "Trois", "Deux" }));
+        }
+
+        [Test]
+        public void Add_AnExpiredOne_NoLongerTakesASlot()
+        {
+            _store.Add("Un", null, 10);
+            _store.Add("Deux", null, null);
+            _store.Add("Trois", null, null);
 
             _time.Now = _time.Now.AddMinutes(11);
-            Assert.That(_store.Set("Second", null, null, false), Is.True);
-            Assert.That(_store.Current!.Message, Is.EqualTo("Second"));
+            _store.Add("Quatre", null, null);
+            _store.Add("Cinq", null, null);
+
+            Assert.That(Messages(), Is.EqualTo(new[] { "Cinq", "Quatre", "Trois" }));
         }
 
         [Test]
-        public void Set_EmptyMessage_AlwaysClears()
+        public void Add_AMessageAlreadyShown_MovesUpWithItsNewLinkAndEnd()
         {
-            _store.Set("Premier", null, null, true);
+            _store.Add("Lave-linge terminé", null, null);
+            _store.Add("Colis", null, null);
 
-            Assert.That(_store.Set("  ", null, null, false), Is.True);
-            Assert.That(_store.Current, Is.Null);
+            _store.Add("Lave-linge terminé", "/lovelace/buanderie", 5);
+
+            Assert.That(Messages(), Is.EqualTo(new[] { "Lave-linge terminé", "Colis" }));
+            Assert.That(_store.Current[0].Link, Is.EqualTo("/lovelace/buanderie"));
+            Assert.That(_store.Current[0].Until, Is.Not.Null);
         }
 
         [Test]
-        public void Set_TruncatesLongMessages()
+        public void Add_EmptyMessage_ClearsThemAll()
         {
-            _store.Set(new string('x', NotificationStore.MaxLength + 50), null, null, true);
+            _store.Add("Un", null, null);
+            _store.Add("Deux", null, null);
 
-            Assert.That(_store.Current!.Message, Has.Length.EqualTo(NotificationStore.MaxLength));
+            _store.Add("  ", null, null);
+
+            Assert.That(_store.Current, Is.Empty);
+        }
+
+        [Test]
+        public void Add_TruncatesLongMessages()
+        {
+            _store.Add(new string('x', NotificationStore.MaxLength + 50), null, null);
+
+            Assert.That(_store.Current.Single().Message, Has.Length.EqualTo(NotificationStore.MaxLength));
         }
     }
 }

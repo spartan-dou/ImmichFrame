@@ -12,18 +12,9 @@ namespace ImmichFrame.WebApi.Controllers
         /// <summary>"/path" opens that Home Assistant view; http(s):// and homeassistant:// are opened as is.</summary>
         public string? Link { get; set; }
 
-        /// <summary>Minutes before the notification hides itself; empty or 0 keeps it until the next one.</summary>
+        /// <summary>Minutes before the notification hides itself; empty or 0 keeps it until newer ones push it out.</summary>
         [JsonConverter(typeof(LenientNullableDoubleConverter))]
         public double? Duration { get; set; }
-
-        /// <summary>False: ignored while another notification is still shown. Defaults to true.</summary>
-        [JsonConverter(typeof(LenientNullableBoolConverter))]
-        public bool? Replace { get; set; }
-    }
-
-    public class NotificationResultDto
-    {
-        public bool Shown { get; set; }
     }
 
     /// <summary>Written by Home Assistant (REST notify), read by the slideshow through the overlay.</summary>
@@ -40,8 +31,11 @@ namespace ImmichFrame.WebApi.Controllers
         }
 
         [HttpPost(Name = "SendNotification")]
-        public NotificationResultDto Send([FromBody] NotificationRequestDto request)
-            => new() { Shown = _store.Set(request.Message, request.Link, request.Duration, request.Replace ?? true) };
+        public IActionResult Send([FromBody] NotificationRequestDto request)
+        {
+            _store.Add(request.Message, request.Link, request.Duration);
+            return NoContent();
+        }
 
         [HttpDelete(Name = "ClearNotification")]
         public IActionResult Clear()

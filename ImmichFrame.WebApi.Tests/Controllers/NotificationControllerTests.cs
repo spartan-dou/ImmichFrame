@@ -57,24 +57,27 @@ namespace ImmichFrame.WebApi.Tests.Controllers
         private Task<HttpResponseMessage> PostRaw(string json)
             => _client.PostAsync("/api/Notification", new StringContent(json, Encoding.UTF8, "application/json"));
 
+        private async Task<JsonArray> Notifications() => (await Overlay())["notifications"]!.AsArray();
+
         [Test]
         public async Task Overlay_BeforeAnyPush_HasNoSensorsNorNotification()
         {
             var overlay = await Overlay();
 
             Assert.That(overlay["sensors"]!.AsArray(), Is.Empty);
-            Assert.That(overlay["notification"], Is.Null);
+            Assert.That(overlay["notifications"]!.AsArray(), Is.Empty);
             Assert.That(overlay["memoriesEnabled"]!.GetValue<bool>(), Is.False);
         }
 
         [Test]
         public async Task Post_AsHomeAssistantRestNotifySendsIt_ShowsUpInTheOverlay()
         {
-            // REST notify renders every templated field as text.
+            // REST notify renders every templated field as text. "replace" is what an
+            // integration from before the queue still sends: ignored, not rejected.
             var response = await PostRaw("""{"message": "📦 Colis déposé", "link": "/lovelace/cameras", "duration": "30", "replace": "True"}""");
 
-            response.EnsureSuccessStatusCode();
-            var notification = (await Overlay())["notification"]!;
+            Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.NoContent));
+            var notification = (await Notifications()).Single()!;
             Assert.That(notification["message"]!.GetValue<string>(), Is.EqualTo("📦 Colis déposé"));
             Assert.That(notification["link"]!.GetValue<string>(), Is.EqualTo("/lovelace/cameras"));
             Assert.That(notification["until"]!.GetValue<long>(), Is.GreaterThan(DateTimeOffset.UtcNow.AddMinutes(29).ToUnixTimeMilliseconds()));
@@ -83,34 +86,33 @@ namespace ImmichFrame.WebApi.Tests.Controllers
         [Test]
         public async Task Post_EmptyOptionalFields_MeanNoLinkAndNoEnd()
         {
-            (await PostRaw("""{"message": "Bonjour", "link": "", "duration": "", "replace": ""}""")).EnsureSuccessStatusCode();
+            (await PostRaw("""{"message": "Bonjour", "link": "", "duration": ""}""")).EnsureSuccessStatusCode();
 
-            var notification = (await Overlay())["notification"]!;
+            var notification = (await Notifications()).Single()!;
             Assert.That(notification["link"]!.GetValue<string>(), Is.Empty);
             Assert.That(notification["until"], Is.Null);
         }
 
         [Test]
-        public async Task Post_WithoutReplace_KeepsTheCurrentOne()
+        public async Task Post_Several_ShowNewestFirst()
         {
             await _client.PostAsJsonAsync("/api/Notification", new { message = "Premier" });
+            await _client.PostAsJsonAsync("/api/Notification", new { message = "Second" });
 
-            var response = await _client.PostAsJsonAsync("/api/Notification", new { message = "Second", replace = false });
-
-            var result = JsonNode.Parse(await response.Content.ReadAsStringAsync())!;
-            Assert.That(result["shown"]!.GetValue<bool>(), Is.False);
-            Assert.That((await Overlay())["notification"]!["message"]!.GetValue<string>(), Is.EqualTo("Premier"));
+            var messages = (await Notifications()).Select(n => n!["message"]!.GetValue<string>());
+            Assert.That(messages, Is.EqualTo(new[] { "Second", "Premier" }));
         }
 
         [Test]
-        public async Task Delete_ClearsIt()
+        public async Task Delete_ClearsThemAll()
         {
             await _client.PostAsJsonAsync("/api/Notification", new { message = "Premier" });
+            await _client.PostAsJsonAsync("/api/Notification", new { message = "Second" });
 
             var response = await _client.DeleteAsync("/api/Notification");
 
             Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.NoContent));
-            Assert.That((await Overlay())["notification"], Is.Null);
+            Assert.That(await Notifications(), Is.Empty);
         }
 
         [Test]

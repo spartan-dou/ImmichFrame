@@ -12,7 +12,8 @@
 	interface Overlay {
 		connected: boolean;
 		sensors: Sensor[];
-		notification: { message: string; link: string; until: number | null } | null;
+		/** Newest first. */
+		notifications: { message: string; link: string; until: number | null }[];
 		memoriesEnabled: boolean;
 	}
 
@@ -43,11 +44,11 @@
 			.join('   ')
 	);
 
-	const notification = $derived.by(() => {
-		const n = overlay?.notification;
-		if (!n || (n.until !== null && now.getTime() >= n.until)) return null;
-		return { text: emoji(n.message), target: notificationTarget(n.link) };
-	});
+	const notifications = $derived(
+		(overlay?.notifications ?? [])
+			.filter((n) => n.until === null || now.getTime() < n.until)
+			.map((n) => ({ text: emoji(n.message), target: notificationTarget(n.link) }))
+	);
 
 	async function refresh() {
 		try {
@@ -76,8 +77,7 @@
 		window.location.href = 'homeassistant://invite';
 	}
 
-	function openNotification() {
-		const target = notification?.target;
+	function openNotification(target: string) {
 		if (!target || notificationBusy) return;
 		notificationBusy = true;
 		setTimeout(() => (notificationBusy = false), BUSY_MS);
@@ -96,17 +96,21 @@
 	});
 </script>
 
-{#if notification?.text}
-	<!-- Without a link, taps go through to pause/next/previous underneath. -->
-	<button
-		id="ha-notification"
-		class="text-frame-primary"
-		class:linked={notification.target !== ''}
-		class:busy={notificationBusy}
-		onclick={openNotification}
-	>
-		{notification.text}
-	</button>
+{#if notifications.length}
+	<div id="ha-notifications">
+		<!-- The server keeps each message once: it is a unique key. -->
+		{#each notifications as notification (notification.text)}
+			<!-- Without a link, taps go through to pause/next/previous underneath. -->
+			<button
+				class="ha-notification text-frame-primary"
+				class:linked={notification.target !== ''}
+				class:busy={notificationBusy}
+				onclick={() => openNotification(notification.target)}
+			>
+				{notification.text}
+			</button>
+		{/each}
+	</div>
 {/if}
 
 <button
@@ -124,9 +128,6 @@
 <style>
 	button {
 		all: unset;
-		position: fixed;
-		/* Above the pause/next/previous grid (z-100). */
-		z-index: 110;
 		font-family: sans-serif;
 		text-shadow: 0 1px 4px rgba(0, 0, 0, 0.8);
 		user-select: none;
@@ -135,6 +136,13 @@
 
 	button.busy {
 		opacity: 0.5;
+	}
+
+	#ha-overlay,
+	#ha-notifications {
+		position: fixed;
+		/* Above the pause/next/previous grid (z-100). */
+		z-index: 110;
 	}
 
 	#ha-overlay {
@@ -158,13 +166,20 @@
 		white-space: pre;
 	}
 
-	#ha-notification {
+	#ha-notifications {
 		top: 24px;
 		left: 24px;
 		right: 24px;
+		display: flex;
+		flex-direction: column;
 		/* Centred without translate(-50%): it would cap the width at half the screen. */
-		width: fit-content;
-		margin: 0 auto;
+		align-items: center;
+		gap: 12px;
+		pointer-events: none;
+	}
+
+	.ha-notification {
+		max-width: 100%;
 		box-sizing: border-box;
 		padding: 14px 30px;
 		border-radius: 20px;
@@ -177,12 +192,12 @@
 		pointer-events: none;
 	}
 
-	#ha-notification.linked {
+	.ha-notification.linked {
 		pointer-events: auto;
 		cursor: pointer;
 	}
 
-	#ha-notification.linked::after {
+	.ha-notification.linked::after {
 		content: ' ›';
 	}
 </style>
