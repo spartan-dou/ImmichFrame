@@ -22,7 +22,7 @@ flowchart LR
 | Lots sans doublon : `MultiAssetPool` tire avec remise, la même photo sortait deux fois côte à côte en mode portrait | `DistinctAssetPool` |
 | Valeurs sous l'heure : `PUT /api/Overlay/Sensors`, en mémoire. Sans nouvelle poussée depuis 5 min, les valeurs s'affichent « -- » plutôt que figées | `SensorStore`, `OverlayController` |
 | Notifications : `POST`/`DELETE /api/Notification`, en mémoire. Trois au plus, la plus récente en haut ; un message déjà affiché remonte au lieu de prendre une deuxième place | `NotificationController`, `NotificationStore` |
-| Surcouche : heure, valeurs, notification, tap qui rouvre Home Assistant | `home-assistant-overlay.svelte`, deux lignes dans `home-page.svelte` |
+| Surcouche : heure et date à la place de l'horloge amont (mêmes formats, tailles et réglage `Style`), valeurs, notifications, tap qui rouvre Home Assistant | `home-assistant-overlay.svelte`, deux lignes dans `home-page.svelte` |
 | Image | `.github/workflows/fork-image.yml` |
 
 Le code amont n'est touché qu'en trois endroits (`PooledImmichFrameLogic.cs`,

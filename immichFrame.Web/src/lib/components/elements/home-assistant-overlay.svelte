@@ -1,6 +1,9 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import { format } from 'date-fns';
+	import * as locale from 'date-fns/locale';
 	import { defaults, getBaseUrl } from '$lib/index';
+	import { configStore } from '$lib/stores/config.store';
 	import { emoji, notificationTarget } from './home-assistant-overlay';
 
 	interface Sensor {
@@ -10,15 +13,15 @@
 	}
 
 	interface Overlay {
-		connected: boolean;
 		sensors: Sensor[];
 		/** Newest first. */
 		notifications: { message: string; link: string; until: number | null }[];
 		memoriesEnabled: boolean;
+		memoriesOnly: boolean;
 	}
 
 	interface Props {
-		/** Memories were shown or hidden: assets already queued are stale. */
+		/** A memories switch changed: assets already queued are stale. */
 		onMemoriesChanged?: () => void;
 	}
 
@@ -34,8 +37,25 @@
 	let clockBusy = $state(false);
 	let notificationBusy = $state(false);
 
-	const time = $derived(
-		String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0')
+	// Same formats and look as the upstream clock, which this replaces: ShowClock stays off.
+	const dateLocale = $derived(locale[$configStore.language as keyof typeof locale] ?? locale.enUS);
+	const date = $derived(
+		format(now, $configStore.clockDateFormat ?? 'eee, MMM d', { locale: dateLocale })
+	);
+	const time = $derived(format(now, $configStore.clockFormat ?? 'HH:mm'));
+
+	// The upstream Style setting, as the clock and the photo details apply it.
+	const clockStyle = $derived(
+		{
+			solid: 'bg-frame-secondary rounded-tr-2xl',
+			transition: 'bg-linear-to-r from-frame-secondary from-0% pr-10',
+			blur: 'backdrop-blur-lg rounded-tr-2xl'
+		}[$configStore.style ?? ''] ?? ''
+	);
+	// Unlike the clock, a message needs a backdrop to stay readable over any photo.
+	const notificationStyle = $derived(
+		{ solid: 'bg-frame-secondary', blur: 'backdrop-blur-lg' }[$configStore.style ?? ''] ??
+			'bg-frame-secondary/50'
 	);
 
 	const sensors = $derived(
@@ -58,7 +78,11 @@
 			});
 			if (!response.ok) return;
 			const next: Overlay = await response.json();
-			if (overlay && overlay.memoriesEnabled !== next.memoriesEnabled) {
+			if (
+				overlay &&
+				(overlay.memoriesEnabled !== next.memoriesEnabled ||
+					overlay.memoriesOnly !== next.memoriesOnly)
+			) {
 				onMemoriesChanged?.();
 			}
 			overlay = next;
@@ -97,14 +121,14 @@
 </script>
 
 {#if notifications.length}
-	<div id="ha-notifications">
+	<div class="pointer-events-none fixed inset-x-0 top-0 z-110 flex flex-col items-center gap-3 p-3">
 		<!-- The server keeps each message once: it is a unique key. -->
 		{#each notifications as notification (notification.text)}
 			<!-- Without a link, taps go through to pause/next/previous underneath. -->
 			<button
-				class="ha-notification text-frame-primary"
+				class="ha-notification max-w-full rounded-2xl px-6 py-3 text-center text-xl font-semibold whitespace-pre-line text-frame-primary text-shadow-sm transition-opacity sm:text-xl md:text-2xl lg:text-3xl {notificationStyle}"
 				class:linked={notification.target !== ''}
-				class:busy={notificationBusy}
+				class:opacity-50={notificationBusy}
 				onclick={() => openNotification(notification.target)}
 			>
 				{notification.text}
@@ -113,83 +137,29 @@
 	</div>
 {/if}
 
+<!-- Above the pause/next/previous grid (z-100), unlike the upstream clock: the tap opens Home Assistant. -->
 <button
-	id="ha-overlay"
-	class="text-frame-primary"
-	class:busy={clockBusy}
+	id="ha-clock"
+	class="fixed bottom-0 left-0 z-110 cursor-pointer p-3 text-center text-frame-primary drop-shadow-2xl transition-opacity select-none {clockStyle}"
+	class:opacity-50={clockBusy}
 	onclick={openHomeAssistant}
 >
-	<span id="ha-clock">{time}</span>
+	<p class="mt-2 text-sm font-thin text-shadow-sm sm:text-sm md:text-base lg:text-xl">{date}</p>
+	<p class="mt-2 text-4xl font-bold text-shadow-lg sm:text-4xl md:text-6xl lg:text-8xl">{time}</p>
 	{#if sensors}
-		<span id="ha-sensors">{sensors}</span>
+		<p
+			class="text-xl font-semibold whitespace-pre text-shadow-sm sm:text-xl md:text-2xl lg:text-3xl"
+		>
+			{sensors}
+		</p>
 	{/if}
 </button>
 
 <style>
-	button {
-		all: unset;
-		font-family: sans-serif;
-		text-shadow: 0 1px 4px rgba(0, 0, 0, 0.8);
-		user-select: none;
-		transition: opacity 0.2s;
-	}
-
-	button.busy {
-		opacity: 0.5;
-	}
-
-	#ha-overlay,
-	#ha-notifications {
-		position: fixed;
-		/* Above the pause/next/previous grid (z-100). */
-		z-index: 110;
-	}
-
-	#ha-overlay {
-		left: 24px;
-		bottom: 24px;
-		display: flex;
-		flex-direction: column;
-		cursor: pointer;
-	}
-
-	#ha-clock {
-		font-size: 2.4rem;
-		font-weight: 600;
-		line-height: 1.1;
-	}
-
-	#ha-sensors {
-		font-size: 1.1rem;
-		margin-top: 4px;
-		opacity: 0.9;
-		white-space: pre;
-	}
-
-	#ha-notifications {
-		top: 24px;
-		left: 24px;
-		right: 24px;
-		display: flex;
-		flex-direction: column;
-		/* Centred without translate(-50%): it would cap the width at half the screen. */
-		align-items: center;
-		gap: 12px;
-		pointer-events: none;
-	}
-
 	.ha-notification {
-		max-width: 100%;
-		box-sizing: border-box;
-		padding: 14px 30px;
-		border-radius: 20px;
-		background: rgba(0, 0, 0, 0.55);
-		font-size: 2rem;
-		line-height: 1.3;
-		text-align: center;
-		white-space: pre-line;
 		overflow-wrap: anywhere;
 		pointer-events: none;
+		user-select: none;
 	}
 
 	.ha-notification.linked {
