@@ -20,13 +20,15 @@ flowchart LR
 |---|---|
 | Souvenirs : `GET`/`PUT /api/Memories` (`enabled`, `only`), **seule source de vérité** — `ShowMemories` est ignoré, l'état est gardé dans `$IMMICHFRAME_STATE_PATH/memories.json` (à défaut, le dossier de config). Masqués tant que l'API ne les a pas allumés, comme en amont. `only` : les souvenirs du jour seuls, et les photos habituelles un jour sans souvenir | `IMemoriesSwitch`, `MemoriesSwitch`, `ToggleableAssetPool`, `MemoriesOnlyAssetPool`, `MemoriesController` ; le constructeur de `PooledImmichFrameLogic` |
 | Lots sans doublon : `MultiAssetPool` tire avec remise, la même photo sortait deux fois côte à côte en mode portrait | `DistinctAssetPool` |
+| Souvenirs du bon jour : demandés pour midi de la date locale. Immich les range sur le jour UTC : demandés « maintenant » au minuit local, ceux de la veille revenaient et restaient en cache toute la journée | trois lignes dans `MemoryAssetsPool` |
 | Valeurs sous l'heure : `PUT /api/Overlay/Sensors`, en mémoire. Sans nouvelle poussée depuis 5 min, les valeurs s'affichent « -- » plutôt que figées | `SensorStore`, `OverlayController` |
 | Notifications : `POST`/`DELETE /api/Notification`, en mémoire. Trois au plus, la plus récente en haut ; un message déjà affiché remonte au lieu de prendre une deuxième place | `NotificationController`, `NotificationStore` |
 | Surcouche : heure et date à la place de l'horloge amont (mêmes formats), valeurs, notifications, tap qui rouvre Home Assistant. Cartes translucides floutées, dimensionnées sur le petit côté de l'écran ; la date et le lieu de la photo prennent le même style depuis ce composant, `asset-info.svelte` reste celui de l'amont | `home-assistant-overlay.svelte`, deux lignes dans `home-page.svelte` |
 | Image | `.github/workflows/fork-image.yml` |
 
-Le code amont n'est touché qu'en trois endroits (`PooledImmichFrameLogic.cs`,
-`Program.cs`, `home-page.svelte`) : ce sont les seuls conflits possibles au rebase.
+Le code amont n'est touché qu'en quatre endroits (`PooledImmichFrameLogic.cs`,
+`MemoryAssetsPool.cs`, `Program.cs`, `home-page.svelte`) : ce sont les seuls conflits
+possibles au rebase.
 
 Les API sont protégées comme le reste d'ImmichFrame : par `AuthenticationSecret`
 s'il est défini, ouvertes sinon.

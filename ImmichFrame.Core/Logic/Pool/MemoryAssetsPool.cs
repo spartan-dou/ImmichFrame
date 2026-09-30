@@ -9,7 +9,9 @@ public class MemoryAssetsPool(ImmichApi immichApi, IAccountSettings accountSetti
 {
     protected override async Task<IEnumerable<AssetResponseDto>> LoadAssets(CancellationToken ct = default)
     {
-        var searchDate = DateTimeOffset.Now;
+        // Fork: Immich keeps a day's memories on the UTC day. Asked for "now" at local midnight
+        // (UTC+1/+2), it still answered yesterday's, and the daily cache kept them all day.
+        var searchDate = new DateTimeOffset(DateTime.Today.AddHours(12));
         var memories = await immichApi.SearchMemoriesAsync(searchDate, null, null, null, null, null, ct);
 
         var memoryAssets = new List<AssetResponseDto>();

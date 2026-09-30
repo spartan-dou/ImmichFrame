@@ -72,6 +72,19 @@ public class MemoryAssetsPoolTests
     }
 
     [Test]
+    public async Task LoadAssets_AsksForNoonOfTheLocalDay()
+    {
+        _mockImmichApi.Setup(x => x.SearchMemoriesAsync(It.IsAny<DateTimeOffset>(), null, null, null, null, null, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<MemoryResponseDto>());
+
+        await _memoryAssetsPool.GetAssets(1, CancellationToken.None);
+
+        // Noon of the local date falls within Immich's UTC day for that date, whatever the hour.
+        var noon = new DateTimeOffset(DateTime.Today.AddHours(12));
+        _mockImmichApi.Verify(x => x.SearchMemoriesAsync(noon, null, null, null, null, null, It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Test]
     public async Task LoadAssets_CallsSearchMemoriesAsync()
     {
         // Arrange
