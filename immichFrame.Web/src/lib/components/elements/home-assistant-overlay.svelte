@@ -37,31 +37,19 @@
 	let clockBusy = $state(false);
 	let notificationBusy = $state(false);
 
-	// Same formats and look as the upstream clock, which this replaces: ShowClock stays off.
+	// Replaces the upstream clock (ShowClock stays off), with its formats.
 	const dateLocale = $derived(locale[$configStore.language as keyof typeof locale] ?? locale.enUS);
 	const date = $derived(
 		format(now, $configStore.clockDateFormat ?? 'eee, MMM d', { locale: dateLocale })
 	);
 	const time = $derived(format(now, $configStore.clockFormat ?? 'HH:mm'));
 
-	// The upstream Style setting, as the clock and the photo details apply it.
-	const clockStyle = $derived(
-		{
-			solid: 'bg-frame-secondary rounded-tr-2xl',
-			transition: 'bg-linear-to-r from-frame-secondary from-0% pr-10',
-			blur: 'backdrop-blur-lg rounded-tr-2xl'
-		}[$configStore.style ?? ''] ?? ''
-	);
-	// Unlike the clock, a message needs a backdrop to stay readable over any photo.
-	const notificationStyle = $derived(
-		{ solid: 'bg-frame-secondary', blur: 'backdrop-blur-lg' }[$configStore.style ?? ''] ??
-			'bg-frame-secondary/50'
-	);
-
 	const sensors = $derived(
-		(overlay?.sensors ?? [])
-			.map((s) => (s.icon ? emoji(s.icon) + ' ' : '') + (s.value ?? '--') + s.unit)
-			.join('   ')
+		(overlay?.sensors ?? []).map((s) => ({
+			icon: emoji(s.icon),
+			value: s.value ?? '--',
+			unit: s.unit
+		}))
 	);
 
 	const notifications = $derived(
@@ -121,14 +109,14 @@
 </script>
 
 {#if notifications.length}
-	<div class="pointer-events-none fixed inset-x-0 top-0 z-110 flex flex-col items-center gap-3 p-3">
+	<div class="ha-notifications">
 		<!-- The server keeps each message once: it is a unique key. -->
 		{#each notifications as notification (notification.text)}
 			<!-- Without a link, taps go through to pause/next/previous underneath. -->
 			<button
-				class="ha-notification max-w-full rounded-2xl px-6 py-3 text-center text-xl font-semibold whitespace-pre-line text-frame-primary text-shadow-sm transition-opacity sm:text-xl md:text-2xl lg:text-3xl {notificationStyle}"
+				class="ha-glass ha-notification"
 				class:linked={notification.target !== ''}
-				class:opacity-50={notificationBusy}
+				class:busy={notificationBusy}
 				onclick={() => openNotification(notification.target)}
 			>
 				{notification.text}
@@ -137,29 +125,126 @@
 	</div>
 {/if}
 
-<!-- Above the pause/next/previous grid (z-100), unlike the upstream clock: the tap opens Home Assistant. -->
-<button
-	id="ha-clock"
-	class="fixed bottom-0 left-0 z-110 cursor-pointer p-3 text-center text-frame-primary drop-shadow-2xl transition-opacity select-none {clockStyle}"
-	class:opacity-50={clockBusy}
-	onclick={openHomeAssistant}
->
-	<p class="mt-2 text-sm font-thin text-shadow-sm sm:text-sm md:text-base lg:text-xl">{date}</p>
-	<p class="mt-2 text-4xl font-bold text-shadow-lg sm:text-4xl md:text-6xl lg:text-8xl">{time}</p>
-	{#if sensors}
-		<p
-			class="text-xl font-semibold whitespace-pre text-shadow-sm sm:text-xl md:text-2xl lg:text-3xl"
-		>
-			{sensors}
-		</p>
+<button class="ha-glass ha-clock" class:busy={clockBusy} onclick={openHomeAssistant}>
+	<span class="ha-time">{time}</span>
+	<span class="ha-date">{date}</span>
+	{#if sensors.length}
+		<span class="ha-sensors">
+			{#each sensors as sensor, i (i)}
+				<span class="ha-sensor">
+					{#if sensor.icon}<span>{sensor.icon}</span>{/if}
+					<span class="ha-value">{sensor.value}</span><span class="ha-unit">{sensor.unit}</span>
+				</span>
+			{/each}
+		</span>
 	{/if}
 </button>
 
 <style>
+	/*
+	 * Sized on the shorter side of the screen rather than BaseFontSize: small enough to
+	 * leave the photo in front, whatever the frame's orientation.
+	 */
+	.ha-glass,
+	:global(#imageinfo.immichframe_image_metadata) {
+		color: var(--primary-color);
+		background: color-mix(in srgb, var(--secondary-color) 34%, transparent);
+		backdrop-filter: blur(1.6vmin) saturate(140%);
+		-webkit-backdrop-filter: blur(1.6vmin) saturate(140%);
+		border: 1px solid rgb(255 255 255 / 0.14);
+		border-radius: 2.2vmin;
+		box-shadow: 0 0.6vmin 2.4vmin rgb(0 0 0 / 0.2);
+		text-shadow: 0 0.1vmin 0.6vmin rgb(0 0 0 / 0.35);
+		user-select: none;
+		transition: opacity 0.2s;
+	}
+
+	.busy {
+		opacity: 0.5;
+	}
+
+	/* Above the pause/next/previous grid (z-100): the tap opens Home Assistant. */
+	.ha-clock {
+		position: fixed;
+		left: 3vmin;
+		bottom: 3vmin;
+		z-index: 110;
+		display: flex;
+		flex-direction: column;
+		align-items: flex-start;
+		padding: 1.8vmin 2.6vmin 2vmin;
+		cursor: pointer;
+		text-align: left;
+	}
+
+	.ha-time {
+		font-size: 8.5vmin;
+		font-weight: 250;
+		line-height: 0.95;
+		letter-spacing: -0.02em;
+		font-variant-numeric: tabular-nums;
+	}
+
+	.ha-date {
+		margin-top: 0.8vmin;
+		font-size: 1.7vmin;
+		font-weight: 600;
+		letter-spacing: 0.16em;
+		text-transform: uppercase;
+		opacity: 0.85;
+	}
+
+	.ha-sensors {
+		align-self: stretch;
+		display: flex;
+		gap: 2.4vmin;
+		margin-top: 1.4vmin;
+		padding-top: 1.3vmin;
+		border-top: 1px solid rgb(255 255 255 / 0.18);
+		font-size: 2.2vmin;
+	}
+
+	.ha-sensor {
+		display: flex;
+		align-items: baseline;
+		gap: 0.6vmin;
+		white-space: nowrap;
+	}
+
+	.ha-value {
+		font-weight: 500;
+		font-variant-numeric: tabular-nums;
+	}
+
+	.ha-unit {
+		margin-left: -0.4vmin;
+		font-size: 0.75em;
+		opacity: 0.75;
+	}
+
+	.ha-notifications {
+		position: fixed;
+		top: 3vmin;
+		left: 3vmin;
+		right: 3vmin;
+		z-index: 110;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: 1.2vmin;
+		pointer-events: none;
+	}
+
 	.ha-notification {
+		max-width: 70vw;
+		padding: 1.2vmin 2.6vmin;
+		font-size: 2.4vmin;
+		font-weight: 500;
+		line-height: 1.3;
+		text-align: center;
+		white-space: pre-line;
 		overflow-wrap: anywhere;
 		pointer-events: none;
-		user-select: none;
 	}
 
 	.ha-notification.linked {
@@ -169,5 +254,36 @@
 
 	.ha-notification.linked::after {
 		content: ' ›';
+		opacity: 0.7;
+	}
+
+	/* The photo details of asset-info.svelte, restyled from here to leave that file as upstream. */
+	:global(#imageinfo.immichframe_image_metadata) {
+		bottom: 3vmin;
+		right: 3vmin;
+		display: flex;
+		flex-direction: column-reverse;
+		align-items: flex-end;
+		gap: 0.3vmin;
+		padding: 1.2vmin 2vmin;
+	}
+
+	:global(#imageinfo .info-item) {
+		margin: 0;
+		gap: 0.8vmin;
+		font-size: 1.7vmin;
+	}
+
+	:global(#imageinfo #imagelocation) {
+		font-size: 2.1vmin;
+		font-weight: 500;
+	}
+
+	:global(#imageinfo #photodate) {
+		opacity: 0.8;
+	}
+
+	:global(#imageinfo svg) {
+		opacity: 0.7;
 	}
 </style>
