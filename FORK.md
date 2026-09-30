@@ -18,7 +18,8 @@ flowchart LR
 
 | Patch | Fichiers |
 |---|---|
-| Souvenirs : `GET`/`PUT /api/Memories`, **seule source de vérité** — `ShowMemories` est ignoré, l'état est gardé dans `$IMMICHFRAME_STATE_PATH/memories.json` (à défaut, le dossier de config). Masqués tant que l'API ne les a pas allumés, comme en amont | `IMemoriesSwitch`, `MemoriesSwitch`, `ToggleableAssetPool`, `MemoriesController` ; une ligne dans `PooledImmichFrameLogic` |
+| Souvenirs : `GET`/`PUT /api/Memories` (`enabled`, `only`), **seule source de vérité** — `ShowMemories` est ignoré, l'état est gardé dans `$IMMICHFRAME_STATE_PATH/memories.json` (à défaut, le dossier de config). Masqués tant que l'API ne les a pas allumés, comme en amont. `only` : les souvenirs du jour seuls, et les photos habituelles un jour sans souvenir | `IMemoriesSwitch`, `MemoriesSwitch`, `ToggleableAssetPool`, `MemoriesOnlyAssetPool`, `MemoriesController` ; le constructeur de `PooledImmichFrameLogic` |
+| Lots sans doublon : `MultiAssetPool` tire avec remise, la même photo sortait deux fois côte à côte en mode portrait | `DistinctAssetPool` |
 | Valeurs sous l'heure : `PUT /api/Overlay/Sensors`, en mémoire. Sans nouvelle poussée depuis 5 min, les valeurs s'affichent « -- » plutôt que figées | `SensorStore`, `OverlayController` |
 | Notifications : `POST`/`DELETE /api/Notification`, en mémoire. Trois au plus, la plus récente en haut ; un message déjà affiché remonte au lieu de prendre une deuxième place | `NotificationController`, `NotificationStore` |
 | Surcouche : heure, valeurs, notification, tap qui rouvre Home Assistant | `home-assistant-overlay.svelte`, deux lignes dans `home-page.svelte` |

@@ -11,12 +11,13 @@ namespace ImmichFrame.Core.Logic;
 /// </summary>
 public class MemoriesSwitch : IMemoriesSwitch
 {
-    private record State(bool Enabled);
+    private record State(bool Enabled, bool Only = false);
 
     private readonly object _lock = new();
     private readonly string? _stateFile;
     private readonly ILogger<MemoriesSwitch>? _logger;
     private bool _enabled;
+    private bool _only;
 
     public MemoriesSwitch(string? stateFile = null, ILogger<MemoriesSwitch>? logger = null)
     {
@@ -30,7 +31,9 @@ public class MemoriesSwitch : IMemoriesSwitch
 
         try
         {
-            _enabled = JsonSerializer.Deserialize<State>(File.ReadAllText(_stateFile))?.Enabled ?? false;
+            var state = JsonSerializer.Deserialize<State>(File.ReadAllText(_stateFile));
+            _enabled = state?.Enabled ?? false;
+            _only = state?.Only ?? false;
         }
         catch (Exception ex)
         {
@@ -58,6 +61,25 @@ public class MemoriesSwitch : IMemoriesSwitch
         }
     }
 
+    public bool Only
+    {
+        get
+        {
+            lock (_lock)
+            {
+                return _only;
+            }
+        }
+        set
+        {
+            lock (_lock)
+            {
+                _only = value;
+                Save();
+            }
+        }
+    }
+
     private void Save()
     {
         if (_stateFile == null)
@@ -73,7 +95,7 @@ public class MemoriesSwitch : IMemoriesSwitch
 
         // Written aside then moved: a crash mid-write never leaves a truncated file.
         var temporary = _stateFile + ".tmp";
-        File.WriteAllText(temporary, JsonSerializer.Serialize(new State(_enabled)));
+        File.WriteAllText(temporary, JsonSerializer.Serialize(new State(_enabled, _only)));
         File.Move(temporary, _stateFile, overwrite: true);
     }
 }

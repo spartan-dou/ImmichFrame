@@ -43,6 +43,27 @@ namespace ImmichFrame.Core.Tests.Logic
         }
 
         [Test]
+        public void Only_SurvivesARestart_AlongsideEnabled()
+        {
+            new MemoriesSwitch(StateFile) { Enabled = true, Only = true };
+
+            var restarted = new MemoriesSwitch(StateFile);
+            Assert.That(restarted.Enabled, Is.True);
+            Assert.That(restarted.Only, Is.True);
+        }
+
+        [Test]
+        public void FileFromBeforeOnly_KeepsEnabled_AndStartsWithOnlyOff()
+        {
+            Directory.CreateDirectory(Path.GetDirectoryName(StateFile)!);
+            File.WriteAllText(StateFile, """{"Enabled":true}""");
+
+            var memoriesSwitch = new MemoriesSwitch(StateFile);
+            Assert.That(memoriesSwitch.Enabled, Is.True);
+            Assert.That(memoriesSwitch.Only, Is.False);
+        }
+
+        [Test]
         public void UnreadableFile_StartsDisabled()
         {
             Directory.CreateDirectory(Path.GetDirectoryName(StateFile)!);

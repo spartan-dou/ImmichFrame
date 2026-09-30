@@ -32,6 +32,7 @@ namespace ImmichFrame.WebApi.Controllers
         /// <summary>Newest first.</summary>
         public List<OverlayNotificationDto> Notifications { get; set; } = new();
         public bool MemoriesEnabled { get; set; }
+        public bool MemoriesOnly { get; set; }
     }
 
     /// <summary>
@@ -70,7 +71,8 @@ namespace ImmichFrame.WebApi.Controllers
                         Until = n.Until?.ToUnixTimeMilliseconds()
                     })
                     .ToList(),
-                MemoriesEnabled = _memoriesSwitch.Enabled
+                MemoriesEnabled = _memoriesSwitch.Enabled,
+                MemoriesOnly = _memoriesSwitch.Only
             };
         }
 

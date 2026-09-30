@@ -76,6 +76,22 @@ namespace ImmichFrame.WebApi.Tests.Controllers
         }
 
         [Test]
+        public async Task Put_Only_LeavesEnabledAsItWas()
+        {
+            var client = _factory.CreateClient();
+            await client.PutAsJsonAsync("/api/Memories", new { enabled = true });
+
+            var response = await client.PutAsJsonAsync("/api/Memories", new { only = true });
+
+            response.EnsureSuccessStatusCode();
+            var json = JsonNode.Parse(await response.Content.ReadAsStringAsync())!;
+            Assert.That(json["enabled"]!.GetValue<bool>(), Is.True);
+            Assert.That(json["only"]!.GetValue<bool>(), Is.True);
+            var overlay = JsonNode.Parse(await client.GetStringAsync("/api/Overlay"))!;
+            Assert.That(overlay["memoriesOnly"]!.GetValue<bool>(), Is.True);
+        }
+
+        [Test]
         public async Task Put_TogglesTheState()
         {
             var client = _factory.CreateClient();

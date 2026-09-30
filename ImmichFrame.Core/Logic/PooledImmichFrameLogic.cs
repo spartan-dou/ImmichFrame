@@ -12,6 +12,7 @@ public class PooledImmichFrameLogic : IAccountImmichFrameLogic, IDisposable
     private readonly IGeneralSettings _generalSettings;
     private readonly IMemoriesSwitch _memoriesSwitch;
     private readonly IApiCache _apiCache;
+    private readonly IAssetPool _memories;
     private readonly IAssetPool _pool;
     private readonly ImmichApi _immichApi;
     private readonly string _downloadLocation = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "ImageCache");
@@ -28,7 +29,9 @@ public class PooledImmichFrameLogic : IAccountImmichFrameLogic, IDisposable
         _immichApi = new ImmichApi(accountSettings.ImmichServerUrl, httpClient);
 
         _apiCache = new ApiCache(RefreshInterval(generalSettings.RefreshAlbumPeopleInterval));
-        _pool = new DistinctAssetPool(BuildPool(accountSettings));
+        // Fork: one memories pool, shared by the memories switch and "memories only".
+        _memories = new MemoryAssetsPool(_immichApi, accountSettings);
+        _pool = new DistinctAssetPool(new MemoriesOnlyAssetPool(_memories, BuildPool(accountSettings), () => _memoriesSwitch.Only));
     }
 
     private static TimeSpan RefreshInterval(int hours)
@@ -53,7 +56,7 @@ public class PooledImmichFrameLogic : IAccountImmichFrameLogic, IDisposable
             pools.Add(new FavoriteAssetsPool(_apiCache, _immichApi, accountSettings));
 
         // Fork: the memories switch decides, not the ShowMemories setting.
-        pools.Add(new ToggleableAssetPool(new MemoryAssetsPool(_immichApi, accountSettings), () => _memoriesSwitch.Enabled));
+        pools.Add(new ToggleableAssetPool(_memories, () => _memoriesSwitch.Enabled));
 
         if (hasAlbums)
             pools.Add(new AlbumAssetsPool(_apiCache, _immichApi, accountSettings));

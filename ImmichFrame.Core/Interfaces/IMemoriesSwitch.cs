@@ -6,5 +6,9 @@ namespace ImmichFrame.Core.Interfaces;
 /// </summary>
 public interface IMemoriesSwitch
 {
+    /// <summary>Memories among the usual assets.</summary>
     bool Enabled { get; set; }
+
+    /// <summary>Memories alone, whatever <see cref="Enabled"/> says; the usual assets on a day without any.</summary>
+    bool Only { get; set; }
 }
