@@ -148,7 +148,7 @@
 	.ha-glass,
 	:global(#imageinfo.immichframe_image_metadata) {
 		color: var(--primary-color);
-		background: color-mix(in srgb, var(--secondary-color) 34%, transparent);
+		background: color-mix(in srgb, var(--secondary-color) 18%, transparent);
 		backdrop-filter: blur(1.6vmin) saturate(140%);
 		-webkit-backdrop-filter: blur(1.6vmin) saturate(140%);
 		border: 1px solid rgb(255 255 255 / 0.14);
