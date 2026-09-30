@@ -86,6 +86,7 @@ builder.Services.AddSingleton<IAssetAccountTracker, BloomFilterAssetAccountTrack
 var statePath = Environment.GetEnvironmentVariable("IMMICHFRAME_STATE_PATH") ?? configPath;
 builder.Services.AddSingleton<IMemoriesSwitch>(srv => new MemoriesSwitch(
     Path.Combine(statePath, "memories.json"), srv.GetRequiredService<ILogger<MemoriesSwitch>>()));
+builder.Services.AddSingleton<ImmichFrame.Core.Logic.Pool.TodaysMemories>();
 builder.Services.AddHomeAssistant();
 builder.Services.AddSingleton<Func<IList<IAccountImmichFrameLogic>, IAccountSelectionStrategy>>(srv =>
     accounts => ActivatorUtilities.CreateInstance<TotalAccountImagesSelectionStrategy>(srv, accounts));

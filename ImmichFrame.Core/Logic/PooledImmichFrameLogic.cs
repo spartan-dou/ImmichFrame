@@ -13,11 +13,12 @@ public class PooledImmichFrameLogic : IAccountImmichFrameLogic, IDisposable
     private readonly IMemoriesSwitch _memoriesSwitch;
     private readonly IApiCache _apiCache;
     private readonly IAssetPool _memories;
+    private readonly IDisposable _memoriesRegistration;
     private readonly IAssetPool _pool;
     private readonly ImmichApi _immichApi;
     private readonly string _downloadLocation = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "ImageCache");
 
-    public PooledImmichFrameLogic(IAccountSettings accountSettings, IGeneralSettings generalSettings, IHttpClientFactory httpClientFactory, IMemoriesSwitch memoriesSwitch)
+    public PooledImmichFrameLogic(IAccountSettings accountSettings, IGeneralSettings generalSettings, IHttpClientFactory httpClientFactory, IMemoriesSwitch memoriesSwitch, TodaysMemories todaysMemories)
     {
         _generalSettings = generalSettings;
         _memoriesSwitch = memoriesSwitch;
@@ -31,7 +32,9 @@ public class PooledImmichFrameLogic : IAccountImmichFrameLogic, IDisposable
         _apiCache = new ApiCache(RefreshInterval(generalSettings.RefreshAlbumPeopleInterval));
         // Fork: one memories pool, shared by the memories switch and "memories only".
         _memories = new MemoryAssetsPool(_immichApi, accountSettings);
-        _pool = new DistinctAssetPool(new MemoriesOnlyAssetPool(_memories, BuildPool(accountSettings), () => _memoriesSwitch.Only));
+        _memoriesRegistration = todaysMemories.Register(_memories);
+        _pool = new DistinctAssetPool(new MemoriesOnlyAssetPool(
+            _memories, BuildPool(accountSettings), () => _memoriesSwitch.Only, todaysMemories.AnyAccountHasSome));
     }
 
     private static TimeSpan RefreshInterval(int hours)
@@ -45,11 +48,8 @@ public class PooledImmichFrameLogic : IAccountImmichFrameLogic, IDisposable
         var hasPeople = accountSettings.People?.Any() ?? false;
         var hasTags = accountSettings.Tags?.Any() ?? false;
 
-        if (!accountSettings.ShowFavorites && !accountSettings.ShowMemories && !hasAlbums && !hasPeople && !hasTags)
-        {
-            return new AllAssetsPool(_apiCache, _immichApi, accountSettings);
-        }
-
+        // Fork: an account without any source brings its memories alone, not its whole
+        // library: that is how a second account adds its memories to the frame.
         var pools = new List<IAssetPool>();
 
         if (accountSettings.ShowFavorites)
@@ -210,5 +210,9 @@ public class PooledImmichFrameLogic : IAccountImmichFrameLogic, IDisposable
 
     public override string ToString() => $"Account Pool [{_immichApi.BaseUrl}]";
 
-    public void Dispose() => (_apiCache as IDisposable)?.Dispose();
+    public void Dispose()
+    {
+        _memoriesRegistration.Dispose();
+        (_apiCache as IDisposable)?.Dispose();
+    }
 }

@@ -10,6 +10,7 @@ namespace ImmichFrame.Core.Tests.Logic.Pool
     {
         private List<AssetResponseDto> _todaysMemories;
         private bool _only;
+        private bool _anotherAccountHasMemories;
         private MemoriesOnlyAssetPool _pool;
 
         [SetUp]
@@ -26,10 +27,23 @@ namespace ImmichFrame.Core.Tests.Logic.Pool
                 .ReturnsAsync(new List<AssetResponseDto> { new() { Id = FixtureHelpers.GuidFor("album") } });
 
             _only = false;
-            _pool = new MemoriesOnlyAssetPool(memories.Object, usual.Object, () => _only);
+            _anotherAccountHasMemories = false;
+            _pool = new MemoriesOnlyAssetPool(memories.Object, usual.Object, () => _only,
+                async ct => _anotherAccountHasMemories || await memories.Object.GetAssetCount(ct) > 0);
         }
 
         private async Task<Guid> NextId() => (await _pool.GetAssets(1)).Single().Id;
+
+        [Test]
+        public async Task On_ThisAccountHasNoneButAnotherHas_ShowsNothingFromThisOne()
+        {
+            _only = true;
+            _todaysMemories.Clear();
+            _anotherAccountHasMemories = true;
+
+            Assert.That(await _pool.GetAssets(5), Is.Empty);
+            Assert.That(await _pool.GetAssetCount(), Is.Zero);
+        }
 
         [Test]
         public async Task Off_ShowsTheUsualAssets()

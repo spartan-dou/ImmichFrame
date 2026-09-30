@@ -19,6 +19,7 @@ flowchart LR
 | Patch | Fichiers |
 |---|---|
 | Souvenirs : `GET`/`PUT /api/Memories` (`enabled`, `only`), **seule source de vérité** — `ShowMemories` est ignoré, l'état est gardé dans `$IMMICHFRAME_STATE_PATH/memories.json` (à défaut, le dossier de config). Masqués tant que l'API ne les a pas allumés, comme en amont. `only` : les souvenirs du jour seuls, et les photos habituelles un jour sans souvenir | `IMemoriesSwitch`, `MemoriesSwitch`, `ToggleableAssetPool`, `MemoriesOnlyAssetPool`, `MemoriesController` ; le constructeur de `PooledImmichFrameLogic` |
+| Plusieurs comptes : un compte sans source (ni album, ni personne, ni tag, ni favoris) n'apporte que ses souvenirs, pas toute sa photothèque. `only` ne revient aux photos habituelles que si aucun compte n'a de souvenir ce jour-là | `TodaysMemories`, `MemoriesOnlyAssetPool` ; `BuildPool` et le constructeur de `PooledImmichFrameLogic` |
 | Lots sans doublon : `MultiAssetPool` tire avec remise, la même photo sortait deux fois côte à côte en mode portrait | `DistinctAssetPool` |
 | Souvenirs du bon jour : demandés pour midi de la date locale. Immich les range sur le jour UTC : demandés « maintenant » au minuit local, ceux de la veille revenaient et restaient en cache toute la journée | trois lignes dans `MemoryAssetsPool` |
 | Valeurs sous l'heure : `PUT /api/Overlay/Sensors`, en mémoire. Sans nouvelle poussée depuis 5 min, les valeurs s'affichent « -- » plutôt que figées | `SensorStore`, `OverlayController` |
