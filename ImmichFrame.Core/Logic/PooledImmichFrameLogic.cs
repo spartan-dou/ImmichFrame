@@ -28,7 +28,7 @@ public class PooledImmichFrameLogic : IAccountImmichFrameLogic, IDisposable
         _immichApi = new ImmichApi(accountSettings.ImmichServerUrl, httpClient);
 
         _apiCache = new ApiCache(RefreshInterval(generalSettings.RefreshAlbumPeopleInterval));
-        _pool = BuildPool(accountSettings);
+        _pool = new DistinctAssetPool(BuildPool(accountSettings));
     }
 
     private static TimeSpan RefreshInterval(int hours)
