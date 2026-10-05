@@ -104,6 +104,31 @@ namespace ImmichFrame.WebApi.Tests.Controllers
         }
 
         [Test]
+        public async Task Post_EmptyMessageWithTag_ClearsThatOneAlone()
+        {
+            await _client.PostAsJsonAsync("/api/Notification", new { message = "Aérer la chambre", tag = "volet_chambre" });
+            await _client.PostAsJsonAsync("/api/Notification", new { message = "Colis" });
+
+            await _client.PostAsJsonAsync("/api/Notification", new { message = "", tag = "volet_chambre" });
+
+            var notifications = await Notifications();
+            Assert.That(notifications.Select(n => n!["message"]!.GetValue<string>()), Is.EqualTo(new[] { "Colis" }));
+            Assert.That(notifications[0]!["id"]!.GetValue<long>(), Is.GreaterThan(0));
+        }
+
+        [Test]
+        public async Task Delete_WithTag_ClearsThatOneAlone()
+        {
+            await _client.PostAsJsonAsync("/api/Notification", new { message = "Sonnette", tag = "sonnette" });
+            await _client.PostAsJsonAsync("/api/Notification", new { message = "Colis" });
+
+            var response = await _client.DeleteAsync("/api/Notification?tag=sonnette");
+
+            Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.NoContent));
+            Assert.That((await Notifications()).Select(n => n!["message"]!.GetValue<string>()), Is.EqualTo(new[] { "Colis" }));
+        }
+
+        [Test]
         public async Task Delete_ClearsThemAll()
         {
             await _client.PostAsJsonAsync("/api/Notification", new { message = "Premier" });

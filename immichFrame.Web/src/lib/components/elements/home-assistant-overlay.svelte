@@ -15,7 +15,7 @@
 	interface Overlay {
 		sensors: Sensor[];
 		/** Newest first. */
-		notifications: { message: string; link: string; until: number | null }[];
+		notifications: { id: number; message: string; link: string; until: number | null }[];
 		memoriesEnabled: boolean;
 		memoriesOnly: boolean;
 	}
@@ -55,7 +55,7 @@
 	const notifications = $derived(
 		(overlay?.notifications ?? [])
 			.filter((n) => n.until === null || now.getTime() < n.until)
-			.map((n) => ({ text: emoji(n.message), target: notificationTarget(n.link) }))
+			.map((n) => ({ id: n.id, text: emoji(n.message), target: notificationTarget(n.link) }))
 	);
 
 	async function refresh() {
@@ -110,8 +110,7 @@
 
 {#if notifications.length}
 	<div class="ha-notifications">
-		<!-- The server keeps each message once: it is a unique key. -->
-		{#each notifications as notification (notification.text)}
+		{#each notifications as notification (notification.id)}
 			<!-- Without a link, taps go through to pause/next/previous underneath. -->
 			<button
 				class="ha-glass ha-notification"

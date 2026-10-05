@@ -15,6 +15,9 @@ namespace ImmichFrame.WebApi.Controllers
         /// <summary>Minutes before the notification hides itself; empty or 0 keeps it until newer ones push it out.</summary>
         [JsonConverter(typeof(LenientNullableDoubleConverter))]
         public double? Duration { get; set; }
+
+        /// <summary>A new message with the same tag replaces this one; an empty message with it clears it alone.</summary>
+        public string? Tag { get; set; }
     }
 
     /// <summary>Written by Home Assistant (REST notify), read by the slideshow through the overlay.</summary>
@@ -33,14 +36,14 @@ namespace ImmichFrame.WebApi.Controllers
         [HttpPost(Name = "SendNotification")]
         public IActionResult Send([FromBody] NotificationRequestDto request)
         {
-            _store.Add(request.Message, request.Link, request.Duration);
+            _store.Add(request.Message, request.Link, request.Duration, request.Tag);
             return NoContent();
         }
 
         [HttpDelete(Name = "ClearNotification")]
-        public IActionResult Clear()
+        public IActionResult Clear([FromQuery] string? tag = null)
         {
-            _store.Clear();
+            _store.Clear(tag);
             return NoContent();
         }
     }

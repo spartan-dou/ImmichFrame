@@ -20,6 +20,7 @@ namespace ImmichFrame.WebApi.Controllers
 
     public class OverlayNotificationDto
     {
+        public long Id { get; set; }
         public string Message { get; set; } = string.Empty;
         public string Link { get; set; } = string.Empty;
         /// <summary>Unix milliseconds, or null for no end.</summary>
@@ -66,6 +67,7 @@ namespace ImmichFrame.WebApi.Controllers
                 Notifications = _notifications.Current
                     .Select(n => new OverlayNotificationDto
                     {
+                        Id = n.Id,
                         Message = n.Message,
                         Link = n.Link,
                         Until = n.Until?.ToUnixTimeMilliseconds()

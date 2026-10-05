@@ -23,7 +23,7 @@ flowchart LR
 | Lots sans doublon : `MultiAssetPool` tire avec remise, la même photo sortait deux fois côte à côte en mode portrait | `DistinctAssetPool` |
 | Souvenirs du bon jour : demandés pour midi de la date locale. Immich les range sur le jour UTC : demandés « maintenant » au minuit local, ceux de la veille revenaient et restaient en cache toute la journée | trois lignes dans `MemoryAssetsPool` |
 | Valeurs sous l'heure : `PUT /api/Overlay/Sensors`, en mémoire. Sans nouvelle poussée depuis 5 min, les valeurs s'affichent « -- » plutôt que figées | `SensorStore`, `OverlayController` |
-| Notifications : `POST`/`DELETE /api/Notification`, en mémoire. Trois au plus, la plus récente en haut ; un message déjà affiché remonte au lieu de prendre une deuxième place | `NotificationController`, `NotificationStore` |
+| Notifications : `POST`/`DELETE /api/Notification`, en mémoire. Trois au plus, la plus récente en haut ; un message déjà affiché remonte au lieu de prendre une deuxième place. `tag` facultatif, comme sur mobile : un nouveau message de même tag remplace l'ancien, un message vide avec un tag n'efface que celui-là | `NotificationController`, `NotificationStore` |
 | Surcouche : heure et date à la place de l'horloge amont (mêmes formats), valeurs, notifications, tap qui rouvre Home Assistant. Cartes translucides floutées, dimensionnées sur le petit côté de l'écran ; la date et le lieu de la photo prennent le même style depuis ce composant, `asset-info.svelte` reste celui de l'amont | `home-assistant-overlay.svelte`, deux lignes dans `home-page.svelte` |
 | Image | `.github/workflows/fork-image.yml` |
 

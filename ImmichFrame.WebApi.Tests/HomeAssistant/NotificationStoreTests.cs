@@ -88,6 +88,41 @@ namespace ImmichFrame.WebApi.Tests.HomeAssistant
         }
 
         [Test]
+        public void Add_SameTag_ReplacesItsOwnWhateverTheText()
+        {
+            _store.Add("⚡ Coupure de courant · 30 min", null, 360, "onduleur");
+            _store.Add("Colis", null, null);
+
+            _store.Add("🔌 Courant rétabli après 12 min", null, 30, "onduleur");
+
+            Assert.That(Messages(), Is.EqualTo(new[] { "🔌 Courant rétabli après 12 min", "Colis" }));
+        }
+
+        [Test]
+        public void Add_EmptyMessageWithTag_ClearsThatOneAlone()
+        {
+            _store.Add("Aérer la chambre", null, 20, "volet_chambre");
+            _store.Add("Colis", null, null);
+
+            _store.Add("", null, null, "volet_chambre");
+            _store.Add("", null, null, "rien_de_tel");
+
+            Assert.That(Messages(), Is.EqualTo(new[] { "Colis" }));
+        }
+
+        [Test]
+        public void Add_GivesEachNotificationItsOwnId()
+        {
+            _store.Add("Un", null, null);
+            _store.Add("Deux", null, null);
+            _store.Add("Un", null, null);
+
+            var ids = _store.Current.Select(n => n.Id).ToList();
+            Assert.That(ids, Is.Unique);
+            Assert.That(ids[0], Is.GreaterThan(ids[1]));
+        }
+
+        [Test]
         public void Add_EmptyMessage_ClearsThemAll()
         {
             _store.Add("Un", null, null);
