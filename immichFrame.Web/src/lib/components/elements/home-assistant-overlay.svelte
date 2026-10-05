@@ -178,7 +178,7 @@
 	}
 
 	.ha-time {
-		font-size: 8.5vmin;
+		font-size: 7.5vmin;
 		font-weight: 250;
 		line-height: 0.95;
 		letter-spacing: -0.02em;
