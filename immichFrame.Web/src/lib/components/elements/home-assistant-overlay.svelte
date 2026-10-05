@@ -151,7 +151,7 @@
 		backdrop-filter: blur(1.6vmin) saturate(140%);
 		-webkit-backdrop-filter: blur(1.6vmin) saturate(140%);
 		border: 1px solid rgb(255 255 255 / 0.14);
-		border-radius: 2.2vmin;
+		border-radius: 3vmin;
 		box-shadow: 0 0.6vmin 2.4vmin rgb(0 0 0 / 0.2);
 		text-shadow: 0 0.1vmin 0.6vmin rgb(0 0 0 / 0.35);
 		user-select: none;
@@ -171,7 +171,8 @@
 		display: flex;
 		flex-direction: column;
 		align-items: flex-start;
-		padding: 1.8vmin 2.6vmin 2vmin;
+		padding: 2.2vmin 3.2vmin 2.4vmin;
+		border-radius: 4.4vmin;
 		cursor: pointer;
 		text-align: left;
 	}
@@ -261,10 +262,10 @@
 		bottom: 3vmin;
 		right: 3vmin;
 		display: flex;
-		flex-direction: column-reverse;
+		flex-direction: column;
 		align-items: flex-end;
 		gap: 0.3vmin;
-		padding: 1.2vmin 2vmin;
+		padding: 1.4vmin 2.4vmin;
 	}
 
 	:global(#imageinfo .info-item) {
@@ -279,6 +280,7 @@
 	}
 
 	:global(#imageinfo #photodate) {
+		font-size: 2vmin;
 		opacity: 0.8;
 	}
 
