@@ -12,7 +12,7 @@ on:
 jobs:
   build:
     name: Build Docusaurus
-    runs-on: ubuntu-latest
+    runs-on: dou-s-home-arc-immichframe
     steps:
       - uses: actions/checkout@v4
         with:
@@ -50,7 +50,7 @@ jobs:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
 
-    runs-on: ubuntu-latest
+    runs-on: dou-s-home-arc-immichframe
     steps:
       - name: Deploy to GitHub Pages
         id: deployment
