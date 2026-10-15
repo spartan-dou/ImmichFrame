@@ -20016,10 +20016,7 @@
         "type": "object"
       },
       "MemoryType": {
-        "description": "Memory type",
-        "enum": [
-          "on_this_day"
-        ],
+        "description": "Memory type (fork: chaîne libre, Immich ajoute des types — « birthday » — sans prévenir)",
         "type": "string"
       },
       "MemoryUpdateDto": {

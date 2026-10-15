@@ -25,9 +25,10 @@ flowchart LR
 | Valeurs sous l'heure : `PUT /api/Overlay/Sensors`, en mémoire. Sans nouvelle poussée depuis 5 min, les valeurs s'affichent « -- » plutôt que figées | `SensorStore`, `OverlayController` |
 | Notifications : `POST`/`DELETE /api/Notification`, en mémoire. Trois au plus, la plus récente en haut ; un message déjà affiché remonte au lieu de prendre une deuxième place. `tag` facultatif, comme sur mobile : un nouveau message de même tag remplace l'ancien, un message vide avec un tag n'efface que celui-là | `NotificationController`, `NotificationStore` |
 | Surcouche : heure et date à la place de l'horloge amont (mêmes formats), valeurs, notifications, tap qui rouvre Home Assistant. Cartes translucides floutées, dimensionnées sur le petit côté de l'écran ; la date et le lieu de la photo prennent le même style depuis ce composant, `asset-info.svelte` reste celui de l'amont | `home-assistant-overlay.svelte`, deux lignes dans `home-page.svelte` |
+| Types de souvenirs : `MemoryType` est une chaîne libre dans la spec. Avec l'enum amont (`on_this_day`), un souvenir `birthday` renvoyé par Immich faisait échouer toute la désérialisation, donc plus aucune photo. À refaire si un rebase ramène l'enum | `ImmichFrame.Core/OpenAPIs/immich-openapi-specs.json` |
 | Image | `.github/workflows/fork-image.yml` |
 
-Le code amont n'est touché qu'en quatre endroits (`PooledImmichFrameLogic.cs`,
+Le code amont n'est touché qu'en cinq endroits, spec OpenAPI comprise (`PooledImmichFrameLogic.cs`,
 `MemoryAssetsPool.cs`, `Program.cs`, `home-page.svelte`) : ce sont les seuls conflits
 possibles au rebase.
 
