@@ -13,7 +13,7 @@ permissions:
 jobs:
   release:
     name: Release
-    runs-on: ubuntu-latest
+    runs-on: dou-s-home-arc-immichframe
     steps:
       - name: Publish
         uses: softprops/action-gh-release@v2
