@@ -12,6 +12,8 @@ on:
 jobs:
   build:
     name: Build Docusaurus
+    # Fork: GitHub Pages stays off here, the docs are published by the original repository
+    if: github.repository == 'immichFrame/ImmichFrame'
     runs-on: dou-s-home-arc-immichframe
     steps:
       - uses: actions/checkout@v4
