@@ -44,28 +44,17 @@ public class PooledImmichFrameLogic : IAccountImmichFrameLogic, IDisposable
 
     private IAssetPool BuildPool(IAccountSettings accountSettings)
     {
-        var hasAlbums = accountSettings.Albums?.Any() ?? false;
-        var hasPeople = accountSettings.People?.Any() ?? false;
-        var hasTags = accountSettings.Tags?.Any() ?? false;
-
-        // Fork: an account without any source brings its memories alone, not its whole
-        // library: that is how a second account adds its memories to the frame.
         var pools = new List<IAssetPool>();
-
-        if (accountSettings.ShowFavorites)
-            pools.Add(new FavoriteAssetsPool(_apiCache, _immichApi, accountSettings));
 
         // Fork: the memories switch decides, not the ShowMemories setting.
         pools.Add(new ToggleableAssetPool(_memories, () => _memoriesSwitch.Enabled));
 
-        if (hasAlbums)
-            pools.Add(new AlbumAssetsPool(_apiCache, _immichApi, accountSettings));
-
-        if (hasPeople)
-            pools.Add(new PersonAssetsPool(_apiCache, _immichApi, accountSettings));
-
-        if (hasTags)
-            pools.Add(new TagAssetsPool(_apiCache, _immichApi, accountSettings));
+        // Fork: an account without any source brings its memories alone, not its whole
+        // library: that is how a second account adds its memories to the frame.
+        if (SearchFilters.HasConfiguredSource(accountSettings))
+        {
+            pools.Add(new AccountSearchPool(_apiCache, _immichApi, accountSettings));
+        }
 
         return new MultiAssetPool(pools);
     }
